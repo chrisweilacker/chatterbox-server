@@ -82,14 +82,32 @@ var requestHandler = function(request, response) {
 
       console.log();
       var filteredMessages = {results: messages.results.slice(0)};
-      // if (options.where) {
-      //   for (var i = 0; i < filteredMessages.results.length; i++) {
-      //     if (options.where.room !== filteredMessages.results[i].room) {
-      //       filteredMessages.results.splice(i, 1);
-      //     }
-      //   }
-      // }
-      response.end(JSON.stringify(messages));
+      //check if url has roomname key
+      // loop through if filteredmessages has roomname
+      var q = url.parse(request.url, true);
+      if (q.query.data && JSON.parse(q.query.data).where) {
+        var where = JSON.parse(q.query.data).where;
+        console.log(where);
+        for (var i = 0; i < filteredMessages.results.length; i++) {
+          console.log("filteredMessages.results=", filteredMessages.results);
+          if (where.room) {
+            if (where.room !== filteredMessages.results[i].room) {
+              filteredMessages.results.splice(i, 1);
+              i--;
+            }
+          } else if (where.username) {
+            if (where.username !== filteredMessages.results[i].username) {
+              filteredMessages.results.splice(i, 1);
+              i--;
+            }
+          }
+
+        }
+        response.end(JSON.stringify(filteredMessages));
+      } else {
+        response.end(JSON.stringify(messages));
+      }
+
 
     } else if (request.method === 'POST') {
       // The outgoing status.
