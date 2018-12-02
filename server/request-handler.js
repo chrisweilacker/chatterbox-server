@@ -15,6 +15,7 @@ var defaultCorsHeaders = {
 };
 var url = require('url');
 var fs = require('fs');
+const querystring = require('querystring');
 // 0:
 // createdAt: "2018-12-01T20:51:05.169Z"
 // objectId: "ZDHZMlp2N1"
@@ -79,8 +80,17 @@ var requestHandler = function(request, response) {
       // .writeHead() writes to the request line and headers of the response,
       // which includes the status and all headers.
 
-      console.log(JSON.stringify(messages));
+      console.log();
+      var filteredMessages = {results: messages.results.slice(0)};
+      // if (options.where) {
+      //   for (var i = 0; i < filteredMessages.results.length; i++) {
+      //     if (options.where.room !== filteredMessages.results[i].room) {
+      //       filteredMessages.results.splice(i, 1);
+      //     }
+      //   }
+      // }
       response.end(JSON.stringify(messages));
+
     } else if (request.method === 'POST') {
       // The outgoing status.
       var statusCode = 201;
@@ -104,6 +114,11 @@ var requestHandler = function(request, response) {
       });
       request.on('end',()=>{
         var message = JSON.parse(data);
+        if (!message.room) {
+          message.room = "";
+        }
+        var d = new Date;
+        message.createdAt = d.toString();
         messages.results.push(message);
         response.end(JSON.stringify(messages));
       });

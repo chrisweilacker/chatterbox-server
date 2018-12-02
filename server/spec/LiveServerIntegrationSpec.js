@@ -66,6 +66,36 @@ describe('server', function() {
     });
   });
 
+  it('should respond with only messages that were requested', function(done) {
+    var requestParams = {method: 'POST',
+      uri: 'http://127.0.0.1:3000/classes/messages',
+      json: {
+        username: 'Jono',
+        text: 'Do my bidding!',
+        room: "ALL"}
+    };
+
+    var requestParams2 = {method: 'POST',
+    uri: 'http://127.0.0.1:3000/classes/messages',
+    json: {
+      username: 'Dono',
+      text: 'Do my bidding!',
+      room: "DOG"}
+    };
+
+    request(requestParams, function(error, response, body) {
+      // Now if we request the log, that message we posted should be there:
+      request(requestParams2, function(error, response, body) {
+        request('http://127.0.0.1:3000/classes/messages?data={"where="{"room":"DOG"}"', function(error, response, body) {
+          var messages = JSON.parse(body).results;
+          expect(messages[0].username).to.equal('Dono');
+          expect(messages[0].text).to.equal('Do my bidding!');
+          done();
+        });
+      });
+    });
+  });
+
   it('Should 404 when asked for a nonexistent endpoint', function(done) {
     request('http://127.0.0.1:3000/arglebargle', function(error, response, body) {
       expect(response.statusCode).to.equal(404);
