@@ -23,9 +23,10 @@ var fs = require('fs');
 // updatedAt: "2018-12-01T20:51:05.169Z"
 // username: "eric"
 var messages = {results: [
-  {objectId: "bN6e9gLMjA", username: "eric", roomname: "DogRoom", text: "jumps", createdAt: "2018-12-01T20:50:19.476Z"},
-  {objectId: "cziCATEQSM", username: "Duncan", roomname: "DogRoom", text: "Kilroy was here.", createdAt: "2018-12-01T20:06:15.875Z"},
-  {objectId: "B8WnnGYNH0", username: "Duncan", roomname: "ROOMIII", text: "testDuncan", createdAt: "2018-12-01T20:06:02.485Z"}]};
+  // {objectId: "bN6e9gLMjA", username: "eric", roomname: "DogRoom", text: "jumps", createdAt: "2018-12-01T20:50:19.476Z"},
+  // {objectId: "cziCATEQSM", username: "Duncan", roomname: "DogRoom", text: "Kilroy was here.", createdAt: "2018-12-01T20:06:15.875Z"},
+  // {objectId: "B8WnnGYNH0", username: "Duncan", roomname: "ROOMIII", text: "testDuncan", createdAt: "2018-12-01T20:06:02.485Z"}
+]};
 /*************************************************************
 
 You should implement your request handler function in this file.
@@ -59,26 +60,44 @@ var requestHandler = function(request, response) {
 
   console.log('Serving request type ' + request.method + ' for url ' + request.url);
 
-  // The outgoing status.
-  var statusCode = 200;
 
-  // See the note below about CORS headers.
-  var headers = defaultCorsHeaders;
-
-
-  // Tell the client we are sending them plain text.
-  //
-  // You will need to change this if you are sending something
-  // other than plain text, like JSON or HTML.
-  headers['Content-Type'] = 'application/json';
-  response.writeHead(statusCode, headers);
-  // .writeHead() writes to the request line and headers of the response,
-  // which includes the status and all headers.
   if (request.url.includes('classes/messages')) {
     if (request.method === 'GET' || request.method === 'OPTIONS') {
+      // The outgoing status.
+      var statusCode = 200;
+
+      // See the note below about CORS headers.
+      var headers = defaultCorsHeaders;
+
+
+      // Tell the client we are sending them plain text.
+      //
+      // You will need to change this if you are sending something
+      // other than plain text, like JSON or HTML.
+      headers['Content-Type'] = 'application/json';
+      response.writeHead(statusCode, headers);
+      // .writeHead() writes to the request line and headers of the response,
+      // which includes the status and all headers.
+
       console.log(JSON.stringify(messages));
       response.end(JSON.stringify(messages));
     } else if (request.method === 'POST') {
+      // The outgoing status.
+      var statusCode = 201;
+
+      // See the note below about CORS headers.
+      var headers = defaultCorsHeaders;
+
+
+      // Tell the client we are sending them plain text.
+      //
+      // You will need to change this if you are sending something
+      // other than plain text, like JSON or HTML.
+      headers['Content-Type'] = 'application/json';
+      response.writeHead(statusCode, headers);
+      // .writeHead() writes to the request line and headers of the response,
+      // which includes the status and all headers.
+
       var data = '';
       request.on('data', (chunk)=>{
         data+=chunk;
@@ -90,6 +109,21 @@ var requestHandler = function(request, response) {
       });
     }
   } else {
+    // The outgoing status.
+    var statusCode = 404;
+
+    // See the note below about CORS headers.
+    var headers = defaultCorsHeaders;
+
+
+    // Tell the client we are sending them plain text.
+    //
+    // You will need to change this if you are sending something
+    // other than plain text, like JSON or HTML.
+    headers['Content-Type'] = 'application/json';
+    response.writeHead(statusCode, headers);
+    // .writeHead() writes to the request line and headers of the response,
+    // which includes the status and all headers.
     response.end('I Don\'t Understand You');
   }
   // Make sure to always call response.end() - Node may not send
