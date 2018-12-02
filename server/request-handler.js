@@ -13,7 +13,19 @@ var defaultCorsHeaders = {
   'access-control-allow-headers': 'content-type, accept',
   'access-control-max-age': 10 // Seconds.
 };
-
+var url = require('url');
+var fs = require('fs');
+// 0:
+// createdAt: "2018-12-01T20:51:05.169Z"
+// objectId: "ZDHZMlp2N1"
+// roomname: "bedroom"
+// text: "what's up everybody?"
+// updatedAt: "2018-12-01T20:51:05.169Z"
+// username: "eric"
+var messages = {results: [
+  {objectId: "bN6e9gLMjA", username: "eric", roomname: "DogRoom", text: "jumps", createdAt: "2018-12-01T20:50:19.476Z"},
+  {objectId: "cziCATEQSM", username: "Duncan", roomname: "DogRoom", text: "Kilroy was here.", createdAt: "2018-12-01T20:06:15.875Z"},
+  {objectId: "B8WnnGYNH0", username: "Duncan", roomname: "ROOMIII", text: "testDuncan", createdAt: "2018-12-01T20:06:02.485Z"}]};
 /*************************************************************
 
 You should implement your request handler function in this file.
@@ -43,6 +55,8 @@ var requestHandler = function(request, response) {
   // Adding more logging to your server can be an easy way to get passive
   // debugging help, but you should always be careful about leaving stray
   // console.logs in your code.
+
+
   console.log('Serving request type ' + request.method + ' for url ' + request.url);
 
   // The outgoing status.
@@ -51,16 +65,33 @@ var requestHandler = function(request, response) {
   // See the note below about CORS headers.
   var headers = defaultCorsHeaders;
 
+
   // Tell the client we are sending them plain text.
   //
   // You will need to change this if you are sending something
   // other than plain text, like JSON or HTML.
-  headers['Content-Type'] = 'text/plain';
-
+  headers['Content-Type'] = 'application/json';
+  response.writeHead(statusCode, headers);
   // .writeHead() writes to the request line and headers of the response,
   // which includes the status and all headers.
-  response.writeHead(statusCode, headers);
-
+  if (request.url.includes('classes/messages')) {
+    if (request.method === 'GET' || request.method === 'OPTIONS') {
+      console.log(JSON.stringify(messages));
+      response.end(JSON.stringify(messages));
+    } else if (request.method === 'POST') {
+      var data = '';
+      request.on('data', (chunk)=>{
+        data+=chunk;
+      });
+      request.on('end',()=>{
+        var message = JSON.parse(data);
+        messages.results.push(message);
+        response.end(JSON.stringify(messages));
+      });
+    }
+  } else {
+    response.end('I Don\'t Understand You');
+  }
   // Make sure to always call response.end() - Node may not send
   // anything back to the client until you do. The string you pass to
   // response.end() will be the body of the response - i.e. what shows
@@ -68,10 +99,10 @@ var requestHandler = function(request, response) {
   //
   // Calling .end "flushes" the response's internal buffer, forcing
   // node to actually send all the data over to the client.
-  response.end('Hello, World!');
+
 };
 
 
 
-export default requestHandler;
+exports.requestHandler = requestHandler;
 
