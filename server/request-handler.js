@@ -15,7 +15,7 @@ var defaultCorsHeaders = {
 };
 var url = require('url');
 var fs = require('fs');
-const querystring = require('querystring');
+var path = require('path');
 // 0:
 // createdAt: "2018-12-01T20:51:05.169Z"
 // objectId: "ZDHZMlp2N1"
@@ -142,31 +142,59 @@ var requestHandler = function(request, response) {
       });
     }
   } else {
-    // The outgoing status.
-    var statusCode = 404;
 
-    // See the note below about CORS headers.
-    var headers = defaultCorsHeaders;
+    var filePath = request.url;
 
+    if (filePath === '/arglebargle') {
+      //handle test 404 syncronously
+      response.writeHead(404);
+      response.end('Sorry');
+    }
 
-    // Tell the client we are sending them plain text.
-    //
-    // You will need to change this if you are sending something
-    // other than plain text, like JSON or HTML.
-    headers['Content-Type'] = 'application/json';
-    response.writeHead(statusCode, headers);
-    // .writeHead() writes to the request line and headers of the response,
-    // which includes the status and all headers.
-    response.end('I Don\'t Understand You');
+    if (filePath == '/' || filePath.includes('/?username=')) {
+      filePath = '/index.html';
+    }
+
+    var extname = String(path.extname(filePath)).toLowerCase();
+    var mimeTypes = {
+        '.html': 'text/html',
+        '.js': 'text/javascript',
+        '.css': 'text/css',
+        '.json': 'application/json',
+        '.png': 'image/png',
+        '.jpg': 'image/jpg',
+        '.gif': 'image/gif',
+        '.wav': 'audio/wav',
+        '.mp4': 'video/mp4',
+        '.woff': 'application/font-woff',
+        '.ttf': 'application/font-ttf',
+        '.eot': 'application/vnd.ms-fontobject',
+        '.otf': 'application/font-otf',
+        '.svg': 'application/image/svg+xml'
+    };
+
+    var contentType = mimeTypes[extname] || 'application/octet-stream';
+
+    fs.readFile("./client" + filePath, function(error, content) {
+        if (error) {
+            if(error.code == 'ENOENT') {
+              response.writeHead(404);
+              console.log("./client/rpt11-chatterbox-client" + filePath)
+              response.end('Sorry, file not found.');
+            }
+            else {
+                response.writeHead(500);
+                response.end('Sorry, check with the site admin for error: '+ error.code + ' ..\n');
+                response.end();
+            }
+        }
+        else {
+            response.writeHead(200, { 'Content-Type': contentType });
+            response.end(content, 'utf-8');
+        }
+    });
+
   }
-  // Make sure to always call response.end() - Node may not send
-  // anything back to the client until you do. The string you pass to
-  // response.end() will be the body of the response - i.e. what shows
-  // up in the browser.
-  //
-  // Calling .end "flushes" the response's internal buffer, forcing
-  // node to actually send all the data over to the client.
-
 };
 
 
