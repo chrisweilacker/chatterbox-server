@@ -41,6 +41,19 @@ this file and include it in basic-server.js so that it actually works.
 *Hint* Check out the node module documentation at http://nodejs.org/api/modules.html.
 
 **************************************************************/
+var getMessages = function() {
+  var messagesString = '';
+  var file = fs.createReadStream('messages', 'utf-8');
+  file.on('data', (chunk) => {
+    if (chunk !== undefined) {
+      messagesString += chunk;
+    }
+  });
+  file.on('end', () => {
+    console.log(messagesString);
+    messages = JSON.parse(messagesString);
+  });
+};
 
 var requestHandler = function(request, response) {
   // Request and Response come from node's http module.
@@ -57,7 +70,6 @@ var requestHandler = function(request, response) {
   // Adding more logging to your server can be an easy way to get passive
   // debugging help, but you should always be careful about leaving stray
   // console.logs in your code.
-
 
   console.log('Serving request type ' + request.method + ' for url ' + request.url);
 
@@ -138,6 +150,13 @@ var requestHandler = function(request, response) {
         var d = new Date;
         message.createdAt = d.toString();
         messages.results.push(message);
+        fs.writeFile('messages', JSON.stringify(messages), 'utf-8', function(err, data) {
+          if (err) {
+            console.log(err);
+          } else {
+            console.log("Succesfully Written Data to File : ", data)
+          }
+        })
         response.end(JSON.stringify(messages));
       });
     }
@@ -151,47 +170,45 @@ var requestHandler = function(request, response) {
       response.end('Sorry');
     }
 
-    if (filePath == '/' || filePath.includes('/?username=')) {
+    if (filePath === '/' || filePath.includes('/?username=')) {
       filePath = '/index.html';
     }
 
     var extname = String(path.extname(filePath)).toLowerCase();
     var mimeTypes = {
-        '.html': 'text/html',
-        '.js': 'text/javascript',
-        '.css': 'text/css',
-        '.json': 'application/json',
-        '.png': 'image/png',
-        '.jpg': 'image/jpg',
-        '.gif': 'image/gif',
-        '.wav': 'audio/wav',
-        '.mp4': 'video/mp4',
-        '.woff': 'application/font-woff',
-        '.ttf': 'application/font-ttf',
-        '.eot': 'application/vnd.ms-fontobject',
-        '.otf': 'application/font-otf',
-        '.svg': 'application/image/svg+xml'
+      '.html': 'text/html',
+      '.js': 'text/javascript',
+      '.css': 'text/css',
+      '.json': 'application/json',
+      '.png': 'image/png',
+      '.jpg': 'image/jpg',
+      '.gif': 'image/gif',
+      '.wav': 'audio/wav',
+      '.mp4': 'video/mp4',
+      '.woff': 'application/font-woff',
+      '.ttf': 'application/font-ttf',
+      '.eot': 'application/vnd.ms-fontobject',
+      '.otf': 'application/font-otf',
+      '.svg': 'application/image/svg+xml'
     };
 
     var contentType = mimeTypes[extname] || 'application/octet-stream';
 
     fs.readFile("./client" + filePath, function(error, content) {
-        if (error) {
-            if(error.code == 'ENOENT') {
-              response.writeHead(404);
-              console.log("./client/rpt11-chatterbox-client" + filePath)
-              response.end('Sorry, file not found.');
-            }
-            else {
-                response.writeHead(500);
-                response.end('Sorry, check with the site admin for error: '+ error.code + ' ..\n');
-                response.end();
-            }
+      if (error) {
+        if(error.code === 'ENOENT') {
+          response.writeHead(404);
+          console.log("404 on ./client/rpt11-chatterbox-client" + filePath);
+          response.end('Sorry, file not found.');
+        } else {
+          response.writeHead(500);
+          response.end('Sorry, check with the site admin for error: '+ error.code + ' ..\n');
+          response.end();
         }
-        else {
-            response.writeHead(200, { 'Content-Type': contentType });
-            response.end(content, 'utf-8');
-        }
+      } else {
+        response.writeHead(200, { 'Content-Type': contentType });
+        response.end(content, 'utf-8');
+      }
     });
 
   }
@@ -200,4 +217,5 @@ var requestHandler = function(request, response) {
 
 
 exports.requestHandler = requestHandler;
+exports.getMessages = getMessages;
 
