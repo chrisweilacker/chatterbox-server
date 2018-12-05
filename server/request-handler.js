@@ -154,9 +154,9 @@ var requestHandler = function(request, response) {
           if (err) {
             console.log(err);
           } else {
-            console.log("Succesfully Written Data to File : ", data)
+            console.log("Succesfully Written Data to File : ", data);
           }
-        })
+        });
         response.end(JSON.stringify(messages));
       });
     }
