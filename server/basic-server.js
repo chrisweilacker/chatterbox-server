@@ -1,12 +1,6 @@
-var defaultCorsHeaders = {
-  'access-control-allow-origin': '*',
-  'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'access-control-allow-headers': 'content-type, accept',
-  'access-control-max-age': 10 // Seconds.
-};
 var url = require('url');
 var fs = require('fs');
-var path = require('path');
+var cors = require('cors');
 // 0:
 // createdAt: "2018-12-01T20:51:05.169Z"
 // objectId: "ZDHZMlp2N1"
@@ -23,8 +17,7 @@ var messages = {results: [
 /* Import node's http module: */
 const express = require('express');
 const app = express();
-var handleRequest = require('./request-handler.js').requestHandler;
-var readMessages = require('./request-handler.js').getMessages;
+//var readMessages = require('./request-handler.js').getMessages;
 // Every server needs to listen on a port with a unique number. The
 // standard port for HTTP servers is port 80, but that port is
 // normally already claimed by another server and/or not accessible
@@ -37,6 +30,19 @@ var port = 3000;
 // special address that always refers to localhost.
 var ip = '127.0.0.1';
 
+var readMessages = function() {
+  var messagesString = '';
+  var file = fs.createReadStream('messages', 'utf-8');
+  file.on('data', (chunk) => {
+    if (chunk !== undefined) {
+      messagesString += chunk;
+    }
+  });
+  file.on('end', () => {
+    console.log(messagesString);
+    messages = JSON.parse(messagesString);
+  });
+};
 
 
 // We use node's http module to create a server.
@@ -45,24 +51,56 @@ var ip = '127.0.0.1';
 // incoming requests.
 //
 // After creating the server, we will tell it to listen on the given port and IP. */
-app.get('/classes/message/', (request, response) =>{
-  // The outgoing status.
-  var statusCode = 200;
+readMessages();
+app.use(express.static('client'));
+app.use(cors());
+app.get('/classes/message*', (request, response) =>{
+  // You will need to change this if you are sending something
+  // other than plain text, like JSON or HTML.
+  response.type('application/json');
+  // headers['Content-Type'] = 'application/json';
+  // response.writeHead(statusCode, headers);
+  // .writeHead() writes to the request line and headers of the response,
+  // which includes the status and all headers.
+  var filteredMessages = {results: messages.results.slice(0)};
+  //check if url has roomname key
+  // loop through if filteredmessages has roomname
+  var q = url.parse(request.url, true);
+  console.log('Request for' + filteredMessages.results);
+  if (q.query.data && JSON.parse(q.query.data).where) {
+    var where = JSON.parse(q.query.data).where;
+    console.log(where);
+    for (var i = 0; i < filteredMessages.results.length; i++) {
+      console.log("filteredMessages.results=", filteredMessages.results);
+      if (where.room) {
+        if (where.room !== filteredMessages.results[i].room) {
+          filteredMessages.results.splice(i, 1);
+          i--;
+        }
+      } else if (where.username) {
+        if (where.username !== filteredMessages.results[i].username) {
+          filteredMessages.results.splice(i, 1);
+          i--;
+        }
+      }
 
-  // See the note below about CORS headers.
-  var headers = defaultCorsHeaders;
+    }
+    response.send(JSON.stringify(filteredMessages));
+  } else {
+    response.send(JSON.stringify(messages));
+  }
+});
 
-
+app.options('/classes/message*', (request, response) =>{
   // Tell the client we are sending them plain text.
   //
   // You will need to change this if you are sending something
   // other than plain text, like JSON or HTML.
-  headers['Content-Type'] = 'application/json';
-  response.writeHead(statusCode, headers);
+  response.type('application/json');
+  // headers['Content-Type'] = 'application/json';
+  // response(statusCode, headers);
   // .writeHead() writes to the request line and headers of the response,
   // which includes the status and all headers.
-
-  console.log();
   var filteredMessages = {results: messages.results.slice(0)};
   //check if url has roomname key
   // loop through if filteredmessages has roomname
@@ -85,29 +123,19 @@ app.get('/classes/message/', (request, response) =>{
       }
 
     }
-    response.end(JSON.stringify(filteredMessages));
+    response.send(JSON.stringify(filteredMessages));
   } else {
-    response.end(JSON.stringify(messages));
+    response.send(JSON.stringify(messages));
   }
 });
-app.listen(port);
-console.log('Listening on http://' + ip + ':' + port);
-readMessages();
 
-app.post('/classes/messages/', (response, request) => {
-  // The outgoing status.
-  var statusCode = 201;
+app.post('/classes/message*', (request, response) => {
 
-  // See the note below about CORS headers.
-  var headers = defaultCorsHeaders;
-
-
-  // Tell the client we are sending them plain text.
-  //
   // You will need to change this if you are sending something
   // other than plain text, like JSON or HTML.
-  headers['Content-Type'] = 'application/json';
-  response.writeHead(statusCode, headers);
+  //headers['Content-Type'] = 'application/json';
+  response.type('application/json');
+  //response.writeHead(statusCode, headers);
   // .writeHead() writes to the request line and headers of the response,
   // which includes the status and all headers.
 
@@ -130,7 +158,7 @@ app.post('/classes/messages/', (response, request) => {
         console.log("Succesfully Written Data to File : ", data);
       }
     });
-    response.end(JSON.stringify(messages));
+    response.send(JSON.stringify(messages));
   });
 // To start this server, run:
 //
@@ -145,3 +173,15 @@ app.post('/classes/messages/', (response, request) => {
 // possibility of serving more requests. To stop your server, hit
 // Ctrl-C on the command line.
 });
+
+app.use(function (req, res, next) {
+  res.status(404).send("Sorry can't find that!")
+});
+app.use(function (err, req, res, next) {
+  console.error(err.stack)
+  res.status(500).send('Something broke!')
+});
+app.listen(port);
+console.log('Listening on http://' + ip + ':' + port);
+
+
